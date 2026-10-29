@@ -7,9 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --desktop-color: #008080;
+            --window-accent: #000080;
+            --title-highlight: #1084d0;
+        }
+
         body {
             font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
-            background-color: #008080; /* Classic Win2k Teal Desktop */
+            background-color: var(--desktop-color);
             user-select: none;
             overflow: hidden;
             font-size: 11px;
@@ -60,9 +66,13 @@
 
         /* Windows 2000 Gradient Titlebar */
         .title-bar {
-            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            background: linear-gradient(90deg, var(--window-accent) 0%, var(--title-highlight) 100%);
             color: white;
             font-weight: bold;
+        }
+
+        .app-window {
+            border-color: var(--window-accent);
         }
 
         /* Color Swatches */
@@ -78,12 +88,32 @@
             background-color: #808080;
             cursor: crosshair;
         }
+
+        .layer-item {
+            min-width: 0;
+        }
+
+        .layer-item.selected {
+            background: #000080;
+            color: #ffffff;
+        }
+
+        .layer-item.selected .layer-visibility {
+            color: #ffffff;
+        }
+
+        .retro-color-input {
+            width: 28px;
+            height: 22px;
+            padding: 1px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex items-center justify-center p-2 sm:p-4">
 
     <!-- Windows 2000 Application Window -->
-    <div class="win-outset bg-[#c0c0c0] w-full max-w-6xl h-[95vh] flex flex-col justify-between shadow-2xl relative">
+    <div class="win-outset app-window bg-[#c0c0c0] w-full max-w-6xl h-[95vh] flex flex-col justify-between shadow-2xl relative">
         
         <!-- Title Bar -->
         <div class="title-bar px-2 py-1 flex items-center justify-between select-none">
@@ -121,7 +151,41 @@
             </div>
             <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>V</u>iew</span>
             <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>I</u>mage</span>
-            <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>O</u>ptions</span>
+            <div class="relative group">
+                <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>O</u>ptions</span>
+                <div class="hidden group-hover:flex flex-col absolute top-full left-0 bg-[#c0c0c0] win-outset z-50 w-48 py-0.5 text-black">
+                    <label class="px-3 py-1 flex items-center justify-between gap-2">
+                        Desktop
+                        <select id="desktop-preset" class="win-inset-thin bg-white text-black" onchange="setDesktopColor(this.value)">
+                            <option value="#008080">Teal</option>
+                            <option value="#000080">Azul</option>
+                            <option value="#808080">Gris</option>
+                            <option value="#008000">Verde</option>
+                            <option value="custom">Personalizado...</option>
+                        </select>
+                    </label>
+                    <label class="px-3 py-1 flex items-center justify-between gap-2">
+                        Otro fondo
+                        <input id="desktop-color" class="retro-color-input win-button" type="color" value="#008080" aria-label="Color personalizado del escritorio" onchange="setDesktopColor(this.value)">
+                    </label>
+                    <div class="border-t border-gray-400 my-0.5"></div>
+                    <label class="px-3 py-1 flex items-center justify-between gap-2">
+                        Borde / título
+                        <select id="window-preset" class="win-inset-thin bg-white text-black" onchange="setWindowColor(this.value)">
+                            <option value="#000080">Azul clásico</option>
+                            <option value="#ff80c0">Rosa</option>
+                            <option value="#008000">Verde retro</option>
+                            <option value="#808080">Gris</option>
+                            <option value="#800080">Morado</option>
+                            <option value="custom">Personalizado...</option>
+                        </select>
+                    </label>
+                    <label class="px-3 py-1 flex items-center justify-between gap-2">
+                        Otro título
+                        <input id="window-color" class="retro-color-input win-button" type="color" value="#000080" aria-label="Color personalizado del borde y título" onchange="setWindowColor(this.value)">
+                    </label>
+                </div>
+            </div>
             <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer" onclick="toggleHelp()"><u>H</u>elp</span>
         </div>
 
@@ -203,6 +267,16 @@
             <div id="canvas-container" class="flex-1 win-inset canvas-viewport overflow-auto flex items-center justify-center p-2 relative">
                 <canvas id="paintCanvas" class="bg-white shadow-md block"></canvas>
             </div>
+
+            <!-- Layers Panel -->
+            <aside class="w-36 shrink-0 win-inset bg-[#c0c0c0] p-1 flex flex-col gap-1" aria-label="Gestión de capas">
+                <div class="font-bold text-center border-b border-[#808080] pb-1">Capas</div>
+                <div id="layers-list" class="win-inset bg-white p-1 flex-1 overflow-y-auto flex flex-col gap-1" aria-live="polite"></div>
+                <div class="grid grid-cols-2 gap-1">
+                    <button class="win-button px-1 py-1" onclick="addLayer()" title="Agregar capa">+ Nueva</button>
+                    <button class="win-button px-1 py-1" onclick="deleteActiveLayer()" title="Eliminar capa activa">− Eliminar</button>
+                </div>
+            </aside>
         </div>
 
         <!-- Color Palette & Undo/Redo Bar -->
@@ -216,6 +290,9 @@
             <div id="palette" class="grid grid-rows-2 grid-flow-col gap-0.5 win-inset p-1 bg-[#c0c0c0]">
                 <!-- Colors injected dynamically -->
             </div>
+            <label class="flex items-center gap-1 text-[10px]" title="Color personalizado del pincel">
+                <input id="custom-color" class="retro-color-input win-button" type="color" value="#000000" aria-label="Color personalizado del pincel" onchange="setColor(this.value)">
+            </label>
 
             <div class="flex items-center gap-1 ml-2">
                 <button class="win-button px-2 py-1 text-xs" title="Undo" onclick="undo()"><i class="fa-solid fa-rotate-left"></i></button>
@@ -232,6 +309,7 @@
         <div class="bg-[#c0c0c0] border-t border-white px-2 py-0.5 text-[10px] flex justify-between items-center text-gray-700">
             <div class="win-inset-thin px-2 py-0.5 flex-1" id="status-help">For Help, click Help Topics on the Help Menu.</div>
             <div class="win-inset-thin px-2 py-0.5 w-28 text-center" id="status-tool">Tool: Pencil</div>
+            <div class="win-inset-thin px-2 py-0.5 w-24 text-center" id="status-layer">Capa: 1</div>
             <div class="win-inset-thin px-2 py-0.5 w-24 text-center" id="status-coords">0, 0px</div>
             <div class="win-inset-thin px-2 py-0.5 w-28 text-center" id="status-size">800 x 500px</div>
         </div>
@@ -246,6 +324,8 @@
         <div class="text-xs p-2 space-y-2">
             <p><strong>Saki love's to paint</strong> is a retro Windows 2000 styled drawing studio featuring dynamic animated strokes.</p>
             <p>• Select motion effects like <strong>Dots, Trail, Wave, Rainbow, or Pulse</strong> to give movement to your drawings.</p>
+            <p>• Use the <strong>Layers</strong> panel to create, select, hide, or delete drawing layers.</p>
+            <p>• Pick a custom brush color and change the desktop or window colors from <strong>Options</strong>.</p>
             <p>• Export your creations using <strong>File &gt; Save As...</strong> or the Save button.</p>
         </div>
         <div class="flex justify-end mt-2">
@@ -265,10 +345,39 @@
         let currentColor = '#000000';
         let brushSize = 3;
         let currentEffect = 'dots';
-        let activeStrokes = []; // Dynamic path strokes for animation
+        let currentStroke = null;
+        let layers = [];
+        let activeLayerId = 1;
+        let nextLayerId = 2;
         let undoStack = [];
         let redoStack = [];
-        let particles = []; // Particle effects engine
+        let particles = [];
+
+        function createLayer(id, name) {
+            const baseCanvas = document.createElement('canvas');
+            const renderCanvas = document.createElement('canvas');
+            baseCanvas.width = renderCanvas.width = canvas.width;
+            baseCanvas.height = renderCanvas.height = canvas.height;
+            renderCanvas.getContext('2d', { willReadFrequently: true });
+            return {
+                id,
+                name: name || `Capa ${id}`,
+                visible: true,
+                strokes: [],
+                baseCanvas,
+                renderCanvas
+            };
+        }
+
+        function copyLayer(layer) {
+            const copy = createLayer(layer.id, layer.name);
+            copy.visible = layer.visible;
+            copy.strokes = JSON.parse(JSON.stringify(layer.strokes));
+            copy.baseCanvas.getContext('2d').drawImage(layer.baseCanvas, 0, 0);
+            return copy;
+        }
+
+        layers = [createLayer(1)];
 
         // Classic Windows 28 Palette Colors
         const paletteColors = [
@@ -282,30 +391,65 @@
                 const box = document.createElement('div');
                 box.className = 'color-box';
                 box.style.backgroundColor = color;
+                box.title = color;
                 box.onclick = () => setColor(color);
                 paletteContainer.appendChild(box);
             });
         }
 
+        function resizeOffscreenCanvas(offscreenCanvas, width, height) {
+            const previous = document.createElement('canvas');
+            previous.width = offscreenCanvas.width;
+            previous.height = offscreenCanvas.height;
+            previous.getContext('2d').drawImage(offscreenCanvas, 0, 0);
+            offscreenCanvas.width = width;
+            offscreenCanvas.height = height;
+            offscreenCanvas.getContext('2d').drawImage(previous, 0, 0);
+        }
+
         function resizeCanvas() {
             const rect = container.getBoundingClientRect();
-            canvas.width = Math.max(600, rect.width - 20);
-            canvas.height = Math.max(400, rect.height - 20);
+            const width = Math.max(600, rect.width - 20);
+            const height = Math.max(400, rect.height - 20);
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+                layers.forEach(layer => {
+                    resizeOffscreenCanvas(layer.baseCanvas, width, height);
+                    resizeOffscreenCanvas(layer.renderCanvas, width, height);
+                });
+            }
             document.getElementById('status-size').innerText = `${canvas.width} x ${canvas.height}px`;
-            saveState();
+            if (undoStack.length > 0) saveState();
         }
 
         // --- History / Undo / Redo ---
+        function captureState() {
+            return {
+                layers: layers.map(copyLayer),
+                activeLayerId,
+                nextLayerId
+            };
+        }
+
         function saveState() {
+            undoStack.push(captureState());
             if (undoStack.length > 20) undoStack.shift();
-            undoStack.push(JSON.stringify(activeStrokes));
             redoStack = [];
+        }
+
+        function restoreState(state) {
+            layers = state.layers.map(copyLayer);
+            activeLayerId = state.activeLayerId;
+            nextLayerId = state.nextLayerId;
+            particles = [];
+            renderLayers();
         }
 
         function undo() {
             if (undoStack.length > 1) {
                 redoStack.push(undoStack.pop());
-                activeStrokes = JSON.parse(undoStack[undoStack.length - 1]);
+                restoreState(undoStack[undoStack.length - 1]);
             }
         }
 
@@ -313,8 +457,77 @@
             if (redoStack.length > 0) {
                 const state = redoStack.pop();
                 undoStack.push(state);
-                activeStrokes = JSON.parse(state);
+                restoreState(state);
             }
+        }
+
+        function getActiveLayer() {
+            return layers.find(layer => layer.id === activeLayerId);
+        }
+
+        function renderLayers() {
+            const list = document.getElementById('layers-list');
+            list.replaceChildren();
+            [...layers].reverse().forEach(layer => {
+                const row = document.createElement('div');
+                row.className = `layer-item flex items-center gap-1 px-1 py-1 cursor-pointer ${layer.id === activeLayerId ? 'selected' : ''}`;
+                row.title = `Seleccionar ${layer.name}`;
+                row.onclick = () => selectLayer(layer.id);
+
+                const visibility = document.createElement('button');
+                visibility.className = 'layer-visibility shrink-0 px-1';
+                visibility.type = 'button';
+                visibility.title = layer.visible ? 'Ocultar capa' : 'Mostrar capa';
+                visibility.setAttribute('aria-label', visibility.title);
+                visibility.innerHTML = `<i class="fa-solid ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i>`;
+                visibility.onclick = event => {
+                    event.stopPropagation();
+                    toggleLayerVisibility(layer.id);
+                };
+
+                const name = document.createElement('span');
+                name.className = 'truncate';
+                name.textContent = layer.name;
+                row.append(visibility, name);
+                list.appendChild(row);
+            });
+            const activeLayer = getActiveLayer();
+            document.getElementById('status-layer').textContent = activeLayer
+                ? `Capa: ${activeLayer.id}` : 'Sin capa';
+        }
+
+        function selectLayer(id) {
+            if (!layers.some(layer => layer.id === id)) return;
+            activeLayerId = id;
+            renderLayers();
+        }
+
+        function addLayer() {
+            const layer = createLayer(nextLayerId++);
+            layers.push(layer);
+            activeLayerId = layer.id;
+            saveState();
+            renderLayers();
+        }
+
+        function deleteActiveLayer() {
+            if (layers.length === 1) {
+                document.getElementById('status-help').textContent = 'Debe conservarse al menos una capa.';
+                return;
+            }
+            const index = layers.findIndex(layer => layer.id === activeLayerId);
+            layers.splice(index, 1);
+            activeLayerId = layers[Math.min(index, layers.length - 1)].id;
+            saveState();
+            renderLayers();
+        }
+
+        function toggleLayerVisibility(id) {
+            const layer = layers.find(item => item.id === id);
+            if (!layer) return;
+            layer.visible = !layer.visible;
+            saveState();
+            renderLayers();
         }
 
         // --- Toolbar & Tool Functions ---
@@ -328,6 +541,33 @@
         function setColor(color) {
             currentColor = color;
             document.getElementById('current-color-preview').style.backgroundColor = color;
+            document.getElementById('custom-color').value = color;
+        }
+
+        function setDesktopColor(color) {
+            if (color === 'custom') {
+                document.getElementById('desktop-color').click();
+                return;
+            }
+            document.documentElement.style.setProperty('--desktop-color', color);
+            document.getElementById('desktop-color').value = color;
+            const presets = ['#008080', '#000080', '#808080', '#008000'];
+            document.getElementById('desktop-preset').value = presets.includes(color) ? color : 'custom';
+        }
+
+        function setWindowColor(color) {
+            if (color === 'custom') {
+                document.getElementById('window-color').click();
+                return;
+            }
+            document.documentElement.style.setProperty('--window-accent', color);
+            const channels = color.match(/[a-f\d]{2}/gi).map(value => parseInt(value, 16));
+            const highlight = channels.map(value => Math.round(value + (255 - value) * 0.35)
+                .toString(16).padStart(2, '0')).join('');
+            document.documentElement.style.setProperty('--title-highlight', `#${highlight}`);
+            document.getElementById('window-color').value = color;
+            const presets = ['#000080', '#ff80c0', '#008000', '#808080', '#800080'];
+            document.getElementById('window-preset').value = presets.includes(color) ? color : 'custom';
         }
 
         function setBrushSize(size) {
@@ -339,11 +579,11 @@
         }
 
         function clearCanvas() {
-            saveState();
-            activeStrokes = [];
+            const layer = getActiveLayer();
+            layer.strokes = [];
+            layer.baseCanvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
             particles = [];
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveState();
         }
 
         function toggleHelp() {
@@ -369,38 +609,41 @@
         }
 
         // Flood Fill Algorithm for Bucket Tool
-        function floodFill(startX, startY, fillColor) {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        function floodFill(targetCtx, startX, startY, fillColor) {
+            if (startX < 0 || startX >= canvas.width || startY < 0 || startY >= canvas.height) return;
+            const imgData = targetCtx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
-            
+
             const targetColor = getPixelColor(data, startX, startY);
             const fillRgb = hexToRgb(fillColor);
-            
-            if (colorsMatch(targetColor, fillRgb)) return;
+            if (colorsMatch(targetColor, fillRgb)) return false;
 
-            const queue = [[startX, startY]];
-            while (queue.length > 0) {
-                const [x, y] = queue.pop();
-                const idx = (y * canvas.width + x) * 4;
-
-                if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
-
-                if (colorsMatch(getPixelColorAtIndex(data, idx), targetColor)) {
-                    setPixelColor(data, idx, fillRgb);
-                    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-                }
+            const startIndex = startY * canvas.width + startX;
+            setPixelColor(data, startIndex * 4, fillRgb);
+            const stack = [startIndex];
+            const queuePixel = index => {
+                const pixelIndex = index * 4;
+                if (data[pixelIndex] !== targetColor.r || data[pixelIndex + 1] !== targetColor.g ||
+                    data[pixelIndex + 2] !== targetColor.b || data[pixelIndex + 3] !== targetColor.a) return;
+                setPixelColor(data, pixelIndex, fillRgb);
+                stack.push(index);
+            };
+            while (stack.length) {
+                const index = stack.pop();
+                const x = index % canvas.width;
+                if (x + 1 < canvas.width) queuePixel(index + 1);
+                if (x > 0) queuePixel(index - 1);
+                if (index + canvas.width < canvas.width * canvas.height) queuePixel(index + canvas.width);
+                if (index - canvas.width >= 0) queuePixel(index - canvas.width);
             }
 
-            ctx.putImageData(imgData, 0, 0);
+            targetCtx.putImageData(imgData, 0, 0);
+            return true;
         }
 
         function getPixelColor(data, x, y) {
             const idx = (y * canvas.width + x) * 4;
-            return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
-        }
-
-        function getPixelColorAtIndex(data, idx) {
-            return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+            return { r: data[idx], g: data[idx + 1], b: data[idx + 2], a: data[idx + 3] };
         }
 
         function setPixelColor(data, idx, rgb) {
@@ -410,8 +653,9 @@
             data[idx + 3] = 255;
         }
 
-        function colorsMatch(c1, c2) {
-            return c1[0] === c2.r && c1[1] === c2.g && c1[2] === c2.b;
+        function colorsMatch(pixel, color) {
+            return pixel.r === color.r && pixel.g === color.g &&
+                pixel.b === color.b && pixel.a === (color.a === undefined ? 255 : color.a);
         }
 
         function hexToRgb(hex) {
@@ -419,34 +663,40 @@
             return result ? {
                 r: parseInt(result[1], 16),
                 g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : { r: 0, g: 0, b: 0 };
+                b: parseInt(result[3], 16),
+                a: 255
+            } : { r: 0, g: 0, b: 0, a: 255 };
         }
 
         // --- Drawing Engine ---
-        let currentStroke = null;
-
         function startDrawing(e) {
-            isDrawing = true;
             const pos = getCanvasCoordinates(e);
+            const layer = getActiveLayer();
+            if (!layer) return;
 
             if (currentTool === 'bucket') {
-                floodFill(pos.x, pos.y, currentColor);
-                saveState();
-                isDrawing = false;
+                const layerCtx = layer.renderCanvas.getContext('2d');
+                renderLayer(layer, layerCtx, parseFloat(document.getElementById('anim-speed').value));
+                if (floodFill(layerCtx, pos.x, pos.y, currentColor)) {
+                    const baseCtx = layer.baseCanvas.getContext('2d');
+                    baseCtx.clearRect(0, 0, canvas.width, canvas.height);
+                    baseCtx.drawImage(layer.renderCanvas, 0, 0);
+                    layer.strokes = [];
+                    saveState();
+                }
                 return;
             }
 
+            isDrawing = true;
             currentStroke = {
                 tool: currentTool,
-                color: currentTool === 'eraser' ? '#ffffff' : currentColor,
+                color: currentColor,
                 size: currentTool === 'pencil' ? 2 : (currentTool === 'eraser' ? brushSize * 4 : brushSize * 2),
                 effect: currentEffect,
                 points: [pos],
                 timestamp: Date.now()
             };
-
-            activeStrokes.push(currentStroke);
+            layer.strokes.push(currentStroke);
         }
 
         function draw(e) {
@@ -455,7 +705,7 @@
 
             if (!isDrawing || !currentStroke) return;
 
-            if (currentTool === 'spray') {
+            if (currentStroke.tool === 'spray') {
                 for (let i = 0; i < 10; i++) {
                     const offsetX = (Math.random() - 0.5) * brushSize * 4;
                     const offsetY = (Math.random() - 0.5) * brushSize * 4;
@@ -466,13 +716,13 @@
             }
 
             // Spawn Particles if Trail Effect enabled
-            if (currentEffect === 'trail') {
+            if (currentStroke.effect === 'trail') {
                 particles.push({
                     x: pos.x,
                     y: pos.y,
                     vx: (Math.random() - 0.5) * 2,
                     vy: (Math.random() - 0.5) * 2,
-                    color: currentColor,
+                    color: currentStroke.color,
                     life: 1.0
                 });
             }
@@ -489,116 +739,119 @@
         // --- Dynamic Render Cycle ---
         let frameCount = 0;
 
+        function renderStroke(targetCtx, stroke, speed) {
+            if (!stroke.points || stroke.points.length === 0) return;
+            targetCtx.save();
+            targetCtx.lineWidth = stroke.size;
+            targetCtx.lineCap = 'round';
+            targetCtx.lineJoin = 'round';
+            targetCtx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+
+            if (stroke.tool === 'rect' && stroke.points.length > 1) {
+                const start = stroke.points[0];
+                const end = stroke.points[stroke.points.length - 1];
+                targetCtx.strokeStyle = stroke.color;
+                targetCtx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+            } else if (stroke.tool === 'circle' && stroke.points.length > 1) {
+                const start = stroke.points[0];
+                const end = stroke.points[stroke.points.length - 1];
+                const radius = Math.hypot(end.x - start.x, end.y - start.y);
+                targetCtx.strokeStyle = stroke.color;
+                targetCtx.beginPath();
+                targetCtx.arc(start.x, start.y, radius, 0, Math.PI * 2);
+                targetCtx.stroke();
+            } else {
+                switch (stroke.effect) {
+                    case 'dots':
+                        targetCtx.strokeStyle = stroke.color;
+                        targetCtx.setLineDash([4, 8]);
+                        targetCtx.lineDashOffset = -frameCount * 1.5 * speed;
+                        drawPath(targetCtx, stroke.points);
+                        break;
+                    case 'wave':
+                        targetCtx.strokeStyle = stroke.color;
+                        targetCtx.beginPath();
+                        targetCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                        for (let i = 1; i < stroke.points.length; i++) {
+                            const offset = Math.sin(frameCount * 0.1 * speed + i * 0.2) * 4;
+                            targetCtx.lineTo(stroke.points[i].x + offset, stroke.points[i].y + offset);
+                        }
+                        targetCtx.stroke();
+                        break;
+                    case 'rainbow': {
+                        const hue = (frameCount * 3 * speed + stroke.timestamp % 360) % 360;
+                        targetCtx.strokeStyle = `hsl(${hue}, 80%, 50%)`;
+                        drawPath(targetCtx, stroke.points);
+                        break;
+                    }
+                    case 'pulse': {
+                        const width = stroke.size + Math.sin(frameCount * 0.1 * speed) * (stroke.size * 0.6);
+                        targetCtx.lineWidth = Math.max(1, width);
+                        targetCtx.strokeStyle = stroke.color;
+                        drawPath(targetCtx, stroke.points);
+                        break;
+                    }
+                    default:
+                        targetCtx.strokeStyle = stroke.color;
+                        drawPath(targetCtx, stroke.points);
+                        break;
+                }
+            }
+            targetCtx.restore();
+        }
+
+        function renderLayer(layer, targetCtx, speed) {
+            targetCtx.clearRect(0, 0, canvas.width, canvas.height);
+            targetCtx.drawImage(layer.baseCanvas, 0, 0);
+            layer.strokes.forEach(stroke => renderStroke(targetCtx, stroke, speed));
+        }
+
         function renderAnimation() {
             frameCount++;
             const animSpeed = parseFloat(document.getElementById('anim-speed').value);
-
-            // Redraw background canvas
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Process Active Strokes
-            activeStrokes.forEach((stroke) => {
-                if (!stroke.points || stroke.points.length === 0) return;
-
-                ctx.save();
-                ctx.lineWidth = stroke.size;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                if (stroke.tool === 'rect' && stroke.points.length > 1) {
-                    const start = stroke.points[0];
-                    const end = stroke.points[stroke.points.length - 1];
-                    ctx.strokeStyle = stroke.color;
-                    ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
-                } else if (stroke.tool === 'circle' && stroke.points.length > 1) {
-                    const start = stroke.points[0];
-                    const end = stroke.points[stroke.points.length - 1];
-                    const radius = Math.hypot(end.x - start.x, end.y - start.y);
-                    ctx.strokeStyle = stroke.color;
-                    ctx.beginPath();
-                    ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
-                    ctx.stroke();
-                } else {
-                    // Motion Effects Handler
-                    switch (stroke.effect) {
-                        case 'dots':
-                            ctx.strokeStyle = stroke.color;
-                            ctx.setLineDash([4, 8]);
-                            ctx.lineDashOffset = -frameCount * 1.5 * animSpeed;
-                            drawPath(stroke.points);
-                            break;
-
-                        case 'wave':
-                            ctx.strokeStyle = stroke.color;
-                            ctx.beginPath();
-                            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-                            for (let i = 1; i < stroke.points.length; i++) {
-                                const waveOffset = Math.sin(frameCount * 0.1 * animSpeed + i * 0.2) * 4;
-                                ctx.lineTo(stroke.points[i].x + waveOffset, stroke.points[i].y + waveOffset);
-                            }
-                            ctx.stroke();
-                            break;
-
-                        case 'rainbow':
-                            const hue = (frameCount * 3 * animSpeed + stroke.timestamp % 360) % 360;
-                            ctx.strokeStyle = `hsl(${hue}, 80%, 50%)`;
-                            drawPath(stroke.points);
-                            break;
-
-                        case 'pulse':
-                            const pulseWidth = stroke.size + Math.sin(frameCount * 0.1 * animSpeed) * (stroke.size * 0.6);
-                            ctx.lineWidth = Math.max(1, pulseWidth);
-                            ctx.strokeStyle = stroke.color;
-                            drawPath(stroke.points);
-                            break;
-
-                        default:
-                            ctx.strokeStyle = stroke.color;
-                            drawPath(stroke.points);
-                            break;
-                    }
-                }
-
-                ctx.restore();
+            layers.forEach(layer => {
+                if (!layer.visible) return;
+                const layerCtx = layer.renderCanvas.getContext('2d');
+                renderLayer(layer, layerCtx, animSpeed);
+                ctx.drawImage(layer.renderCanvas, 0, 0);
             });
 
-            // Process Particles for Trail Effect
             for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life;
+                const particle = particles[i];
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
                 ctx.fill();
-
-                p.x += p.vx * animSpeed;
-                p.y += p.vy * animSpeed;
-                p.life -= 0.02 * animSpeed;
-
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
+                particle.x += particle.vx * animSpeed;
+                particle.y += particle.vy * animSpeed;
+                particle.life -= 0.02 * animSpeed;
+                if (particle.life <= 0) particles.splice(i, 1);
             }
-            ctx.globalAlpha = 1.0;
-
+            ctx.globalAlpha = 1;
             requestAnimationFrame(renderAnimation);
         }
 
-        function drawPath(points) {
+        function drawPath(targetCtx, points) {
             if (points.length < 2) return;
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
+            targetCtx.beginPath();
+            targetCtx.moveTo(points[0].x, points[0].y);
             for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
+                targetCtx.lineTo(points[i].x, points[i].y);
             }
-            ctx.stroke();
+            targetCtx.stroke();
         }
 
         // --- Initialization ---
         window.onload = function () {
             initPalette();
             resizeCanvas();
+            renderLayers();
+            setColor(currentColor);
+            saveState();
 
             // Event Listeners
             canvas.addEventListener('mousedown', startDrawing);
