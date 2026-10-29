@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saki love's to paint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+            background-color: #008080; /* Classic Win2k Teal Desktop */
+            user-select: none;
+            overflow: hidden;
+            font-size: 11px;
+        }
+
+        /* Classic Windows 2000 Bevels */
+        .win-outset {
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: inset 1px 1px 0px #dfdfdf, inset -1px -1px 0px #808080;
+        }
+
+        .win-inset {
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf;
+        }
+
+        .win-inset-thin {
+            border-top: 1px solid #808080;
+            border-left: 1px solid #808080;
+            border-right: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+        }
+
+        .win-button {
+            background-color: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: inset 1px 1px 0px #dfdfdf, inset -1px -1px 0px #808080;
+            cursor: pointer;
+        }
+
+        .win-button:active, .win-button.active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf;
+            background-color: #d4d0c8;
+        }
+
+        /* Windows 2000 Gradient Titlebar */
+        .title-bar {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Color Swatches */
+        .color-box {
+            width: 15px;
+            height: 15px;
+            box-shadow: inset 1px 1px 0px #808080, inset -1px -1px 0px #ffffff;
+            cursor: pointer;
+        }
+
+        /* Canvas Scroll Container */
+        .canvas-viewport {
+            background-color: #808080;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-2 sm:p-4">
+
+    <!-- Windows 2000 Application Window -->
+    <div class="win-outset bg-[#c0c0c0] w-full max-w-6xl h-[95vh] flex flex-col justify-between shadow-2xl relative">
+        
+        <!-- Title Bar -->
+        <div class="title-bar px-2 py-1 flex items-center justify-between select-none">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-paint-brush text-xs text-yellow-300"></i>
+                <span class="text-xs tracking-wide font-bold">Saki love's to paint</span>
+            </div>
+            <div class="flex space-x-1">
+                <button class="win-button w-4 h-4 text-[9px] flex items-center justify-center font-bold">_</button>
+                <button class="win-button w-4 h-4 text-[9px] flex items-center justify-center font-bold">□</button>
+                <button class="win-button w-4 h-4 text-[9px] flex items-center justify-center font-bold text-black" onclick="clearCanvas()">X</button>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="flex space-x-3 px-2 py-1 bg-[#c0c0c0] border-b border-[#808080] text-xs select-none">
+            <div class="relative group">
+                <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>F</u>ile</span>
+                <div class="hidden group-hover:flex flex-col absolute top-full left-0 bg-[#c0c0c0] win-outset z-50 w-32 py-0.5 text-black">
+                    <button class="text-left px-3 py-1 hover:bg-[#000080] hover:text-white flex justify-between" onclick="saveAsPNG()">
+                        <span><u>S</u>ave As...</span>
+                    </button>
+                    <div class="border-t border-gray-400 my-0.5"></div>
+                    <button class="text-left px-3 py-1 hover:bg-[#000080] hover:text-white" onclick="clearCanvas()"><u>E</u>xit</button>
+                </div>
+            </div>
+            <div class="relative group">
+                <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>E</u>dit</span>
+                <div class="hidden group-hover:flex flex-col absolute top-full left-0 bg-[#c0c0c0] win-outset z-50 w-32 py-0.5 text-black">
+                    <button class="text-left px-3 py-1 hover:bg-[#000080] hover:text-white" onclick="undo()"><u>U</u>ndo</button>
+                    <button class="text-left px-3 py-1 hover:bg-[#000080] hover:text-white" onclick="redo()"><u>R</u>edo</button>
+                    <div class="border-t border-gray-400 my-0.5"></div>
+                    <button class="text-left px-3 py-1 hover:bg-[#000080] hover:text-white" onclick="clearCanvas()">Clear <u>I</u>mage</button>
+                </div>
+            </div>
+            <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>V</u>iew</span>
+            <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>I</u>mage</span>
+            <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer"><u>O</u>ptions</span>
+            <span class="hover:bg-[#000080] hover:text-white px-1 cursor-pointer" onclick="toggleHelp()"><u>H</u>elp</span>
+        </div>
+
+        <!-- Main Content Area (Toolbox + Canvas) -->
+        <div class="flex-1 flex overflow-hidden p-1 gap-1 bg-[#c0c0c0]">
+            
+            <!-- Left Toolbar -->
+            <div class="w-20 flex flex-col gap-1 items-center bg-[#c0c0c0]">
+                <!-- Tools Grid -->
+                <div class="grid grid-cols-2 gap-1 p-1 win-outset w-full bg-[#c0c0c0]">
+                    <button id="tool-pencil" class="win-button p-1.5 text-center active" title="Pencil" onclick="setTool('pencil')">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button id="tool-brush" class="win-button p-1.5 text-center" title="Paintbrush" onclick="setTool('brush')">
+                        <i class="fa-solid fa-paint-brush"></i>
+                    </button>
+                    <button id="tool-eraser" class="win-button p-1.5 text-center" title="Eraser" onclick="setTool('eraser')">
+                        <i class="fa-solid fa-eraser"></i>
+                    </button>
+                    <button id="tool-bucket" class="win-button p-1.5 text-center" title="Fill Bucket" onclick="setTool('bucket')">
+                        <i class="fa-solid fa-fill-drip"></i>
+                    </button>
+                    <button id="tool-spray" class="win-button p-1.5 text-center" title="Spray Can" onclick="setTool('spray')">
+                        <i class="fa-solid fa-spray-can"></i>
+                    </button>
+                    <button id="tool-line" class="win-button p-1.5 text-center" title="Line" onclick="setTool('line')">
+                        <i class="fa-solid fa-slash"></i>
+                    </button>
+                    <button id="tool-rect" class="win-button p-1.5 text-center" title="Rectangle" onclick="setTool('rect')">
+                        <i class="fa-regular fa-square"></i>
+                    </button>
+                    <button id="tool-circle" class="win-button p-1.5 text-center" title="Circle" onclick="setTool('circle')">
+                        <i class="fa-regular fa-circle"></i>
+                    </button>
+                </div>
+
+                <!-- Animated Stroke Effects Selection -->
+                <div class="win-inset w-full p-1 bg-[#c0c0c0] text-[10px] flex flex-col gap-1 mt-1">
+                    <span class="font-bold text-center border-b border-[#808080]">Stroke Motion</span>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="none" onchange="setEffect('none')"> None
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="dots" checked onchange="setEffect('dots')"> Dots
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="trail" onchange="setEffect('trail')"> Trail
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="wave" onchange="setEffect('wave')"> Wave
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="rainbow" onchange="setEffect('rainbow')"> Rainbow
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="effect" value="pulse" onchange="setEffect('pulse')"> Pulse
+                    </label>
+                </div>
+
+                <!-- Motion Settings -->
+                <div class="win-inset w-full p-1 bg-[#c0c0c0] text-[9px] flex flex-col gap-1 mt-1">
+                    <span class="font-bold text-center border-b border-[#808080]">Speed</span>
+                    <input type="range" id="anim-speed" min="0.2" max="3" step="0.2" value="1" class="w-full h-2">
+                </div>
+
+                <!-- Brush Size Box -->
+                <div class="win-inset w-full p-1 bg-[#c0c0c0] text-[10px] flex flex-col gap-1 mt-1">
+                    <span class="font-bold text-center border-b border-[#808080]">Size</span>
+                    <div class="flex gap-1 justify-between">
+                        <button class="win-button w-full text-center py-0.5" onclick="setBrushSize(2)">S</button>
+                        <button class="win-button w-full text-center py-0.5" onclick="setBrushSize(6)">M</button>
+                        <button class="win-button w-full text-center py-0.5" onclick="setBrushSize(12)">L</button>
+                        <button class="win-button w-full text-center py-0.5" onclick="setBrushSize(22)">XL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div id="canvas-container" class="flex-1 win-inset canvas-viewport overflow-auto flex items-center justify-center p-2 relative">
+                <canvas id="paintCanvas" class="bg-white shadow-md block"></canvas>
+            </div>
+        </div>
+
+        <!-- Color Palette & Undo/Redo Bar -->
+        <div class="p-1 bg-[#c0c0c0] border-t border-[#808080] flex items-center gap-2">
+            <!-- Active Color Indicator -->
+            <div class="win-inset p-1 bg-[#c0c0c0] flex items-center justify-center relative w-8 h-8">
+                <div id="current-color-preview" class="w-5 h-5 bg-black border border-gray-600"></div>
+            </div>
+
+            <!-- Expanded Windows 2000 Palette -->
+            <div id="palette" class="grid grid-rows-2 grid-flow-col gap-0.5 win-inset p-1 bg-[#c0c0c0]">
+                <!-- Colors injected dynamically -->
+            </div>
+
+            <div class="flex items-center gap-1 ml-2">
+                <button class="win-button px-2 py-1 text-xs" title="Undo" onclick="undo()"><i class="fa-solid fa-rotate-left"></i></button>
+                <button class="win-button px-2 py-1 text-xs" title="Redo" onclick="redo()"><i class="fa-solid fa-rotate-right"></i></button>
+                <button class="win-button px-2 py-1 text-xs font-bold" onclick="saveAsPNG()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+            </div>
+
+            <div class="text-[10px] text-gray-700 ml-auto hidden sm:block">
+                Saki love's to paint • Windows 2000 Edition
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="bg-[#c0c0c0] border-t border-white px-2 py-0.5 text-[10px] flex justify-between items-center text-gray-700">
+            <div class="win-inset-thin px-2 py-0.5 flex-1" id="status-help">For Help, click Help Topics on the Help Menu.</div>
+            <div class="win-inset-thin px-2 py-0.5 w-28 text-center" id="status-tool">Tool: Pencil</div>
+            <div class="win-inset-thin px-2 py-0.5 w-24 text-center" id="status-coords">0, 0px</div>
+            <div class="win-inset-thin px-2 py-0.5 w-28 text-center" id="status-size">800 x 500px</div>
+        </div>
+    </div>
+
+    <!-- Help Modal Window -->
+    <div id="help-modal" class="hidden absolute win-outset bg-[#c0c0c0] w-80 p-2 shadow-2xl z-50">
+        <div class="title-bar px-2 py-1 flex items-center justify-between mb-2">
+            <span class="text-xs font-bold">About Saki love's to paint</span>
+            <button class="win-button px-1 text-xs" onclick="toggleHelp()">X</button>
+        </div>
+        <div class="text-xs p-2 space-y-2">
+            <p><strong>Saki love's to paint</strong> is a retro Windows 2000 styled drawing studio featuring dynamic animated strokes.</p>
+            <p>• Select motion effects like <strong>Dots, Trail, Wave, Rainbow, or Pulse</strong> to give movement to your drawings.</p>
+            <p>• Export your creations using <strong>File &gt; Save As...</strong> or the Save button.</p>
+        </div>
+        <div class="flex justify-end mt-2">
+            <button class="win-button px-4 py-1 text-xs" onclick="toggleHelp()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Canvas Initialization & Configuration ---
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
+
+        // Application State
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let currentColor = '#000000';
+        let brushSize = 3;
+        let currentEffect = 'dots';
+        let activeStrokes = []; // Dynamic path strokes for animation
+        let undoStack = [];
+        let redoStack = [];
+        let particles = []; // Particle effects engine
+
+        // Classic Windows 28 Palette Colors
+        const paletteColors = [
+            '#000000', '#808080', '#800000', '#808000', '#008000', '#008080', '#000080', '#800080', '#808040', '#004040', '#0080ff', '#004080', '#8000ff', '#804000',
+            '#ffffff', '#c0c0c0', '#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ffff80', '#00ff80', '#80ffff', '#780000', '#ff80c0', '#ff8040'
+        ];
+
+        function initPalette() {
+            const paletteContainer = document.getElementById('palette');
+            paletteColors.forEach(color => {
+                const box = document.createElement('div');
+                box.className = 'color-box';
+                box.style.backgroundColor = color;
+                box.onclick = () => setColor(color);
+                paletteContainer.appendChild(box);
+            });
+        }
+
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            canvas.width = Math.max(600, rect.width - 20);
+            canvas.height = Math.max(400, rect.height - 20);
+            document.getElementById('status-size').innerText = `${canvas.width} x ${canvas.height}px`;
+            saveState();
+        }
+
+        // --- History / Undo / Redo ---
+        function saveState() {
+            if (undoStack.length > 20) undoStack.shift();
+            undoStack.push(JSON.stringify(activeStrokes));
+            redoStack = [];
+        }
+
+        function undo() {
+            if (undoStack.length > 1) {
+                redoStack.push(undoStack.pop());
+                activeStrokes = JSON.parse(undoStack[undoStack.length - 1]);
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                const state = redoStack.pop();
+                undoStack.push(state);
+                activeStrokes = JSON.parse(state);
+            }
+        }
+
+        // --- Toolbar & Tool Functions ---
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('[id^="tool-"]').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tool-${tool}`).classList.add('active');
+            document.getElementById('status-tool').innerText = `Tool: ${tool.charAt(0).toUpperCase() + tool.slice(1)}`;
+        }
+
+        function setColor(color) {
+            currentColor = color;
+            document.getElementById('current-color-preview').style.backgroundColor = color;
+        }
+
+        function setBrushSize(size) {
+            brushSize = size;
+        }
+
+        function setEffect(effect) {
+            currentEffect = effect;
+        }
+
+        function clearCanvas() {
+            saveState();
+            activeStrokes = [];
+            particles = [];
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function toggleHelp() {
+            document.getElementById('help-modal').classList.toggle('hidden');
+        }
+
+        function saveAsPNG() {
+            const link = document.createElement('a');
+            link.download = "saki_artwork.png";
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- Coordinates Helper ---
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: Math.round(clientX - rect.left),
+                y: Math.round(clientY - rect.top)
+            };
+        }
+
+        // Flood Fill Algorithm for Bucket Tool
+        function floodFill(startX, startY, fillColor) {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            
+            const targetColor = getPixelColor(data, startX, startY);
+            const fillRgb = hexToRgb(fillColor);
+            
+            if (colorsMatch(targetColor, fillRgb)) return;
+
+            const queue = [[startX, startY]];
+            while (queue.length > 0) {
+                const [x, y] = queue.pop();
+                const idx = (y * canvas.width + x) * 4;
+
+                if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+
+                if (colorsMatch(getPixelColorAtIndex(data, idx), targetColor)) {
+                    setPixelColor(data, idx, fillRgb);
+                    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+                }
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        function getPixelColor(data, x, y) {
+            const idx = (y * canvas.width + x) * 4;
+            return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+        }
+
+        function getPixelColorAtIndex(data, idx) {
+            return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+        }
+
+        function setPixelColor(data, idx, rgb) {
+            data[idx] = rgb.r;
+            data[idx + 1] = rgb.g;
+            data[idx + 2] = rgb.b;
+            data[idx + 3] = 255;
+        }
+
+        function colorsMatch(c1, c2) {
+            return c1[0] === c2.r && c1[1] === c2.g && c1[2] === c2.b;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // --- Drawing Engine ---
+        let currentStroke = null;
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getCanvasCoordinates(e);
+
+            if (currentTool === 'bucket') {
+                floodFill(pos.x, pos.y, currentColor);
+                saveState();
+                isDrawing = false;
+                return;
+            }
+
+            currentStroke = {
+                tool: currentTool,
+                color: currentTool === 'eraser' ? '#ffffff' : currentColor,
+                size: currentTool === 'pencil' ? 2 : (currentTool === 'eraser' ? brushSize * 4 : brushSize * 2),
+                effect: currentEffect,
+                points: [pos],
+                timestamp: Date.now()
+            };
+
+            activeStrokes.push(currentStroke);
+        }
+
+        function draw(e) {
+            const pos = getCanvasCoordinates(e);
+            document.getElementById('status-coords').innerText = `${pos.x}, ${pos.y}px`;
+
+            if (!isDrawing || !currentStroke) return;
+
+            if (currentTool === 'spray') {
+                for (let i = 0; i < 10; i++) {
+                    const offsetX = (Math.random() - 0.5) * brushSize * 4;
+                    const offsetY = (Math.random() - 0.5) * brushSize * 4;
+                    currentStroke.points.push({ x: pos.x + offsetX, y: pos.y + offsetY });
+                }
+            } else {
+                currentStroke.points.push(pos);
+            }
+
+            // Spawn Particles if Trail Effect enabled
+            if (currentEffect === 'trail') {
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    color: currentColor,
+                    life: 1.0
+                });
+            }
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                saveState();
+            }
+            isDrawing = false;
+            currentStroke = null;
+        }
+
+        // --- Dynamic Render Cycle ---
+        let frameCount = 0;
+
+        function renderAnimation() {
+            frameCount++;
+            const animSpeed = parseFloat(document.getElementById('anim-speed').value);
+
+            // Redraw background canvas
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Process Active Strokes
+            activeStrokes.forEach((stroke) => {
+                if (!stroke.points || stroke.points.length === 0) return;
+
+                ctx.save();
+                ctx.lineWidth = stroke.size;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                if (stroke.tool === 'rect' && stroke.points.length > 1) {
+                    const start = stroke.points[0];
+                    const end = stroke.points[stroke.points.length - 1];
+                    ctx.strokeStyle = stroke.color;
+                    ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+                } else if (stroke.tool === 'circle' && stroke.points.length > 1) {
+                    const start = stroke.points[0];
+                    const end = stroke.points[stroke.points.length - 1];
+                    const radius = Math.hypot(end.x - start.x, end.y - start.y);
+                    ctx.strokeStyle = stroke.color;
+                    ctx.beginPath();
+                    ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    // Motion Effects Handler
+                    switch (stroke.effect) {
+                        case 'dots':
+                            ctx.strokeStyle = stroke.color;
+                            ctx.setLineDash([4, 8]);
+                            ctx.lineDashOffset = -frameCount * 1.5 * animSpeed;
+                            drawPath(stroke.points);
+                            break;
+
+                        case 'wave':
+                            ctx.strokeStyle = stroke.color;
+                            ctx.beginPath();
+                            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                            for (let i = 1; i < stroke.points.length; i++) {
+                                const waveOffset = Math.sin(frameCount * 0.1 * animSpeed + i * 0.2) * 4;
+                                ctx.lineTo(stroke.points[i].x + waveOffset, stroke.points[i].y + waveOffset);
+                            }
+                            ctx.stroke();
+                            break;
+
+                        case 'rainbow':
+                            const hue = (frameCount * 3 * animSpeed + stroke.timestamp % 360) % 360;
+                            ctx.strokeStyle = `hsl(${hue}, 80%, 50%)`;
+                            drawPath(stroke.points);
+                            break;
+
+                        case 'pulse':
+                            const pulseWidth = stroke.size + Math.sin(frameCount * 0.1 * animSpeed) * (stroke.size * 0.6);
+                            ctx.lineWidth = Math.max(1, pulseWidth);
+                            ctx.strokeStyle = stroke.color;
+                            drawPath(stroke.points);
+                            break;
+
+                        default:
+                            ctx.strokeStyle = stroke.color;
+                            drawPath(stroke.points);
+                            break;
+                    }
+                }
+
+                ctx.restore();
+            });
+
+            // Process Particles for Trail Effect
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                p.x += p.vx * animSpeed;
+                p.y += p.vy * animSpeed;
+                p.life -= 0.02 * animSpeed;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
+            requestAnimationFrame(renderAnimation);
+        }
+
+        function drawPath(points) {
+            if (points.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.stroke();
+        }
+
+        // --- Initialization ---
+        window.onload = function () {
+            initPalette();
+            resizeCanvas();
+
+            // Event Listeners
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Mobile Touch Events
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+            canvas.addEventListener('touchend', stopDrawing);
+
+            window.addEventListener('resize', resizeCanvas);
+
+            // Start Main Loop
+            renderAnimation();
+        };
+    </script>
+</body>
+</html>
